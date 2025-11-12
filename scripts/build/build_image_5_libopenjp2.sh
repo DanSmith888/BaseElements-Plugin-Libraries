@@ -59,13 +59,19 @@ if [[ $OS = 'Darwin' ]]; then
 elif [[ $OS = 'Linux' ]]; then
     # Linux build
     print_info "Configuring for Linux..."
+    # Disable webp detection to ensure consistent builds across environments
+    # Locally, webp isn't detected and build succeeds. On GitHub runners, CMake/pkg-config
+    # may detect webp but the library isn't available, causing linker errors.
+    # CMAKE_DISABLE_FIND_PACKAGE_WebP prevents CMake from finding webp via any method.
     CC=clang CXX=clang++ \
     CFLAGS="-fPIC" \
     cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS:BOOL=OFF \
         -DCMAKE_IGNORE_PATH=/usr/lib/x86_64-linux-gnu/ \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
-        -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
+        -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+        -DCMAKE_DISABLE_FIND_PACKAGE_WebP:BOOL=ON \
+        ./
 fi
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
