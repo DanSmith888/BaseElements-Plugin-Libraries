@@ -68,7 +68,6 @@ jobs:
             libclang-dev \
             libclang1 \
             python3-clang \
-            libwebp-dev
 
       - name: Make scripts executable
         run: |
