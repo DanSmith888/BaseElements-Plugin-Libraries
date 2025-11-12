@@ -102,8 +102,16 @@ jobs:
           echo ""
           
           echo "=== WebP pkg-config Files ==="
-          echo "Searching for webp .pc files:"
-          find /usr -name "*webp*.pc" 2>/dev/null | head -20 || echo "No webp .pc files found"
+          echo "Searching for webp .pc files in pkg-config directories:"
+          for pc_dir in /usr/lib/pkgconfig /usr/lib/x86_64-linux-gnu/pkgconfig /usr/lib/aarch64-linux-gnu/pkgconfig /usr/share/pkgconfig /usr/local/lib/pkgconfig /usr/local/share/pkgconfig; do
+            if [ -d "$pc_dir" ]; then
+              found=$(find "$pc_dir" -maxdepth 1 -name "*webp*.pc" 2>/dev/null)
+              if [ -n "$found" ]; then
+                echo "  Found in $pc_dir:"
+                echo "$found" | sed 's/^/    /'
+              fi
+            fi
+          done | head -20 || echo "  No webp .pc files found"
           echo ""
           echo "Checking pkg-config search paths:"
           pkg-config --variable pc_path pkg-config 2>/dev/null || echo "Cannot get pkg-config paths"
@@ -129,15 +137,36 @@ jobs:
           
           echo "=== WebP Library Files ==="
           echo "Searching for libwebp.so files:"
-          find /usr/lib* -name "*webp*.so*" 2>/dev/null | head -10 || echo "No webp .so files found"
+          for lib_dir in /usr/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/local/lib; do
+            if [ -d "$lib_dir" ]; then
+              found=$(find "$lib_dir" -maxdepth 2 -name "*webp*.so*" 2>/dev/null | head -5)
+              if [ -n "$found" ]; then
+                echo "$found"
+              fi
+            fi
+          done | head -10 || echo "No webp .so files found"
           echo ""
           echo "Searching for libwebp.a files:"
-          find /usr/lib* -name "*webp*.a" 2>/dev/null | head -10 || echo "No webp .a files found"
+          for lib_dir in /usr/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/local/lib; do
+            if [ -d "$lib_dir" ]; then
+              found=$(find "$lib_dir" -maxdepth 2 -name "*webp*.a" 2>/dev/null | head -5)
+              if [ -n "$found" ]; then
+                echo "$found"
+              fi
+            fi
+          done | head -10 || echo "No webp .a files found"
           echo ""
           
           echo "=== WebP Header Files ==="
           echo "Searching for webp headers:"
-          find /usr/include -name "*webp*" 2>/dev/null | head -10 || echo "No webp headers found"
+          for inc_dir in /usr/include /usr/local/include; do
+            if [ -d "$inc_dir" ]; then
+              found=$(find "$inc_dir" -maxdepth 2 -name "*webp*" -type f 2>/dev/null | head -5)
+              if [ -n "$found" ]; then
+                echo "$found"
+              fi
+            fi
+          done | head -10 || echo "No webp headers found"
           echo ""
           
           echo "=== What Depends on WebP ==="
