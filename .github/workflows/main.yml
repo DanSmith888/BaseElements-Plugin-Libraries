@@ -69,6 +69,121 @@ jobs:
             libclang1 \
             python3-clang \
 
+      - name: Debug webp and build environment
+        run: |
+          echo "=========================================="
+          echo "DEBUG: Build Environment Diagnostics"
+          echo "=========================================="
+          echo ""
+          echo "=== Platform Info ==="
+          echo "OS: ${{ matrix.os }}"
+          echo "Arch: ${{ matrix.arch }}"
+          echo "Platform: ${{ matrix.platform }}"
+          lsb_release -a 2>/dev/null || echo "lsb_release not available"
+          echo ""
+          
+          echo "=== CMake Info ==="
+          cmake --version || echo "cmake not found"
+          which cmake || echo "cmake not in PATH"
+          echo ""
+          
+          echo "=== pkg-config Info ==="
+          which pkg-config || echo "pkg-config NOT installed"
+          pkg-config --version 2>/dev/null || echo "pkg-config not available"
+          echo "PKG_CONFIG_PATH: ${PKG_CONFIG_PATH:-not set}"
+          echo ""
+          
+          echo "=== WebP Package Check ==="
+          echo "Checking for webp runtime packages:"
+          dpkg -l | grep -i webp || echo "No webp packages found"
+          echo ""
+          echo "Checking for webp-dev package:"
+          dpkg -l | grep -i "webp-dev" || echo "libwebp-dev NOT installed"
+          echo ""
+          
+          echo "=== WebP pkg-config Files ==="
+          echo "Searching for webp .pc files:"
+          find /usr -name "*webp*.pc" 2>/dev/null | head -20 || echo "No webp .pc files found"
+          echo ""
+          echo "Checking pkg-config search paths:"
+          pkg-config --variable pc_path pkg-config 2>/dev/null || echo "Cannot get pkg-config paths"
+          echo ""
+          
+          echo "=== WebP Detection Tests ==="
+          if command -v pkg-config >/dev/null 2>&1; then
+            echo "Testing pkg-config --exists libwebp:"
+            pkg-config --exists libwebp && echo "  ✓ webp FOUND via pkg-config" || echo "  ✗ webp NOT found via pkg-config"
+            echo ""
+            echo "Testing pkg-config --libs libwebp:"
+            pkg-config --libs libwebp 2>&1 || echo "  Cannot get webp libs"
+            echo ""
+            echo "Testing pkg-config --cflags libwebp:"
+            pkg-config --cflags libwebp 2>&1 || echo "  Cannot get webp cflags"
+            echo ""
+            echo "All packages containing 'webp' in pkg-config:"
+            pkg-config --list-all 2>/dev/null | grep -i webp || echo "  No webp packages in pkg-config"
+          else
+            echo "pkg-config not available, skipping detection tests"
+          fi
+          echo ""
+          
+          echo "=== WebP Library Files ==="
+          echo "Searching for libwebp.so files:"
+          find /usr/lib* -name "*webp*.so*" 2>/dev/null | head -10 || echo "No webp .so files found"
+          echo ""
+          echo "Searching for libwebp.a files:"
+          find /usr/lib* -name "*webp*.a" 2>/dev/null | head -10 || echo "No webp .a files found"
+          echo ""
+          
+          echo "=== WebP Header Files ==="
+          echo "Searching for webp headers:"
+          find /usr/include -name "*webp*" 2>/dev/null | head -10 || echo "No webp headers found"
+          echo ""
+          
+          echo "=== What Depends on WebP ==="
+          echo "Packages that depend on libwebp7:"
+          apt-cache rdepends libwebp7 2>/dev/null | head -20 || echo "Cannot check dependencies"
+          echo ""
+          echo "Packages that depend on libwebp-dev:"
+          apt-cache rdepends libwebp-dev 2>/dev/null | head -20 || echo "Cannot check dependencies"
+          echo ""
+          
+          echo "=== CMake Package Detection ==="
+          echo "Testing CMake find_package for WebP:"
+          printf '%s\n' \
+            'find_package(PkgConfig QUIET)' \
+            'if(PkgConfig_FOUND)' \
+            '  pkg_check_modules(WEBP QUIET libwebp)' \
+            '  if(WEBP_FOUND)' \
+            '    message(STATUS "CMake found webp via pkg-config")' \
+            '    message(STATUS "  WEBP_LIBRARIES: ${WEBP_LIBRARIES}")' \
+            '    message(STATUS "  WEBP_INCLUDE_DIRS: ${WEBP_INCLUDE_DIRS}")' \
+            '  else()' \
+            '    message(STATUS "CMake did NOT find webp via pkg-config")' \
+            '  endif()' \
+            'else()' \
+            '  message(STATUS "pkg-config not available to CMake")' \
+            'endif()' \
+            'find_library(WEBP_LIB webp PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu)' \
+            'if(WEBP_LIB)' \
+            '  message(STATUS "CMake found webp library: ${WEBP_LIB}")' \
+            'else()' \
+            '  message(STATUS "CMake did NOT find webp library")' \
+            'endif()' > /tmp/test_webp.cmake
+          cmake -P /tmp/test_webp.cmake || echo "CMake test failed"
+          echo ""
+          
+          echo "=== Library Search Paths ==="
+          echo "Standard library paths:"
+          if [ -d /usr/lib ]; then echo "  /usr/lib: found"; else echo "  /usr/lib: not found"; fi
+          if [ -d /usr/lib/x86_64-linux-gnu ]; then echo "  /usr/lib/x86_64-linux-gnu: found"; else echo "  /usr/lib/x86_64-linux-gnu: not found"; fi
+          if [ -d /usr/lib/aarch64-linux-gnu ]; then echo "  /usr/lib/aarch64-linux-gnu: found"; else echo "  /usr/lib/aarch64-linux-gnu: not found"; fi
+          echo ""
+          
+          echo "=========================================="
+          echo "End of diagnostics"
+          echo "=========================================="
+
       - name: Make scripts executable
         run: |
           chmod +x scripts/*.sh
