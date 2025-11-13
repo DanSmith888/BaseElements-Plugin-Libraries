@@ -59,6 +59,7 @@ if [[ $OS = 'Darwin' ]]; then
 elif [[ $OS = 'Linux' ]]; then
     # Linux build
     print_info "Configuring for Linux..."
+    # Disable webp support to ensure consistent builds across environments
     # Locally, webp isn't detected and build succeeds. On GitHub runners, pkg-config
     # finds webp.pc but the library files aren't available, causing linker errors.
     CC=clang CXX=clang++ \
@@ -68,49 +69,10 @@ elif [[ $OS = 'Linux' ]]; then
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
         -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
-        -DCMAKE_DISABLE_FIND_PACKAGE_WebP:BOOL=ON \
+        -DWITH_WEBP=OFF \
         -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--verbose" \
         ./
-    
-    # Diagnostic: Check if webp was detected
-    cd "${BUILD_DIR}"
-    print_info "Checking if webp was detected by CMake..."
-    if grep -q "WEBP" CMakeCache.txt 2>/dev/null; then
-        print_info "WebP-related variables found in CMakeCache.txt:"
-        grep -i "WEBP" CMakeCache.txt | head -10 || true
-    else
-        print_info "No WebP variables found in CMakeCache.txt"
-    fi
-    
-    # Check linker commands in generated Makefiles
-    print_info "Checking linker commands for -lwebp..."
-    LINK_FILES=$(find . -name "link.txt" -type f 2>/dev/null | head -3)
-    if [[ -n "$LINK_FILES" ]]; then
-        for link_file in $LINK_FILES; do
-            if grep -q "-lwebp" "$link_file" 2>/dev/null; then
-                print_info "Found -lwebp in: $link_file"
-                grep "-lwebp" "$link_file" || true
-            else
-                print_info "No -lwebp found in: $link_file"
-            fi
-        done
-    fi
-    
-    # Remove -lwebp from linker flags if CMake detected it
-    # This handles the case where pkg-config finds webp.pc but library files don't exist
-    if grep -q "WEBP_LIBRARIES" CMakeCache.txt 2>/dev/null || grep -rq "-lwebp" . --include="*.make" --include="link.txt" 2>/dev/null; then
-        print_info "Removing webp from linker flags..."
-        sed -i 's/-lwebp//g' CMakeCache.txt 2>/dev/null || true
-        sed -i 's/;-lwebp//g' CMakeCache.txt 2>/dev/null || true
-        # Also update the generated Makefiles
-        find . -name "*.make" -type f -exec sed -i 's/-lwebp//g' {} \; 2>/dev/null || true
-        find . -name "link.txt" -type f -exec sed -i 's/-lwebp//g' {} \; 2>/dev/null || true
-        print_info "Removed -lwebp from linker flags"
-    else
-        print_info "No -lwebp found to remove (webp not detected)"
-    fi
-    cd "${OUTPUT_SRC}/${LIBRARY_NAME}"
 fi
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
