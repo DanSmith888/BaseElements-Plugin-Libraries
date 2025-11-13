@@ -62,7 +62,6 @@ jobs:
             libclang-dev \
             libclang1 \
             python3-clang \
-            libwebp-dev \
 
       - name: Install LLVM 18
         run: |
