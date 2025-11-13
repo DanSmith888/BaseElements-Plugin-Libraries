@@ -62,6 +62,7 @@ jobs:
             libclang-dev \
             libclang1 \
             python3-clang \
+            libwebp-dev \
 
       - name: Install LLVM 18
         run: |
@@ -103,15 +104,38 @@ jobs:
             --slave   /usr/bin/lldb                  lldb                  /usr/bin/lldb-${VERSION} \
             --slave   /usr/bin/lldb-server           lldb-server           /usr/bin/lldb-server-${VERSION}
 
+      - name: Debug - Show LLVM and Clang versions
+        run: |
+          echo "=========================================="
+          echo "LLVM and Clang Version Information"
+          echo "=========================================="
+          echo ""
+          echo "=== Clang Version ==="
+          clang --version || echo "clang not found"
+          echo ""
+          echo "=== Clang++ Version ==="
+          clang++ --version || echo "clang++ not found"
+          echo ""
+          echo "=== LLVM Config Version ==="
+          llvm-config --version || echo "llvm-config not found"
+          echo ""
+          echo "=== Which binaries are being used ==="
+          which clang || echo "clang not in PATH"
+          which clang++ || echo "clang++ not in PATH"
+          which llvm-config || echo "llvm-config not in PATH"
+          echo ""
+          echo "=== Real paths (resolving symlinks) ==="
+          readlink -f $(which clang 2>/dev/null) || echo "clang not found"
+          readlink -f $(which clang++ 2>/dev/null) || echo "clang++ not found"
+          readlink -f $(which llvm-config 2>/dev/null) || echo "llvm-config not found"
+          echo ""
+          echo "=========================================="
+
       - name: Make scripts executable
         run: |
           chmod +x scripts/*.sh
           chmod +x scripts/build/*.sh
           chmod +x scripts/install/*.sh
-
-      # - name: Configure clang alternatives
-      #   run: |
-      #     sudo scripts/install/update-alternatives-clang.sh
 
       - name: Clean output folder
         working-directory: scripts
