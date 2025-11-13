@@ -182,9 +182,10 @@ elif [[ $OS = 'Linux' ]]; then
     CC=clang CXX=clang++ \
     CFLAGS="-fPIC" \
     ./configure --disable-shared --disable-docs --disable-dependency-tracking \
-        --with-heic=yes --with-freetype=yes --with-fontconfig=yes --with-png=yes --with-jpeg=yes --without-openjp2 \
+        --with-heic=yes --with-freetype=yes --with-fontconfig=yes --with-png=yes --with-jpeg=yes \
         --without-utilities --without-xml --without-lzma --without-x --with-quantum-depth=16 \
         --enable-zero-configuration --enable-hdri --without-bzlib --disable-openmp --disable-assert \
+        --without-lcms --without-lqr --without-djvu --without-openexr --without-jbig --without-tiff  --without-openjp2 \
         --prefix="${PREFIX}"
     
     print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
