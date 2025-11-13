@@ -66,6 +66,12 @@ elif [[ $OS = 'Linux' ]]; then
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
         -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
         -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+        -DCMAKE_DISABLE_FIND_PACKAGE_WebP:BOOL=ON \
+        -DWITH_WEBP=OFF \
+        -DBUILD_CODEC=OFF \
+        -DWITH_TIFF=OFF \
+        -DWITH_PNG=OFF \
+        -DWITH_LCMS2=OFF \
         -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,--verbose" \
         ./

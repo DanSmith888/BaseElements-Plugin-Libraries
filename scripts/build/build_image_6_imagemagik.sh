@@ -147,7 +147,6 @@ if [[ $OS = 'Darwin' ]]; then
         --with-heic=yes --with-freetype=yes --with-fontconfig=yes --with-png=yes --with-jpeg=yes --with-openjp2=yes \
         --without-utilities --without-xml --without-lzma --without-x --with-quantum-depth=16 \
         --enable-zero-configuration --enable-hdri --without-bzlib --disable-openmp --disable-assert \
-        --without-webp \
         --host="${HOST}" \
         --prefix="${PREFIX_x86_64}"
     
@@ -172,7 +171,6 @@ elif [[ $OS = 'Linux' ]]; then
         --with-heic=yes --with-freetype=yes --with-fontconfig=yes --with-png=yes --with-jpeg=yes --with-openjp2=yes \
         --without-utilities --without-xml --without-lzma --without-x --with-quantum-depth=16 \
         --enable-zero-configuration --enable-hdri --without-bzlib --disable-openmp --disable-assert \
-        --without-webp \
         --prefix="${PREFIX}"
     
     print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
