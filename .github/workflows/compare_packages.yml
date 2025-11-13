@@ -2,7 +2,9 @@ name: Compare Packages Across Platforms
 
 on:
   workflow_dispatch:
-  # Only run on manual trigger, not on push
+  push:
+    tags:
+      - 'v9*'
 
 jobs:
   compare-packages:
