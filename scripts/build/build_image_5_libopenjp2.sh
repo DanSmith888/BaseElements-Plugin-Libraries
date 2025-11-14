@@ -59,14 +59,25 @@ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS:BOOL=OF
     -DCMAKE_IGNORE_PATH=/usr/local/lib/ \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
+    -DBUILD_CODEC:BOOL=OFF \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
 # Build only the library target to avoid linking executables against Homebrew libraries
+# The executables (opj_compress, opj_decompress, opj_dump) require TIFF/PNG which are
+# ARM64-only on ARM64 runners, causing x86_64 linking failures in universal builds
 make -j${JOBS} openjp2
-make install
 
-# Copy headers and libraries
+# Install only the library (skip make install which rebuilds all targets including executables)
+# Copy the library from build location to PREFIX
+mkdir -p "${PREFIX}/lib"
+cp "${BUILD_DIR}/bin/libopenjp2.a" "${PREFIX}/lib/libopenjp2.a"
+
+# Copy headers manually (no generated headers for openjp2)
+mkdir -p "${PREFIX}/include/openjpeg-2.5"
+cp "${OUTPUT_SRC}/${LIBRARY_NAME}/src/lib/openjp2"/*.h "${PREFIX}/include/openjpeg-2.5/"
+
+# Copy headers and libraries to final destination
 interactive_prompt \
     "Ready to copy headers and libraries" \
     "Headers: ${OUTPUT_INCLUDE}/${LIBRARY_NAME}/" \
