@@ -44,6 +44,7 @@ tar -xf "${SOURCE_ARCHIVES}/${ARCHIVE_NAME}" --strip-components=1
 # Create build directory
 BUILD_DIR="${OUTPUT_SRC}/${LIBRARY_NAME}/_build"
 mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
 PREFIX="${BUILD_DIR}"
 
 # Configure and build
@@ -60,12 +61,12 @@ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS:BOOL=OF
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
     -DBUILD_CODEC:BOOL=OFF -DBUILD_JPIPSERVER:BOOL=OFF -DBUILD_JPIPCLIENT:BOOL=OFF \
-    -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
+    -DCMAKE_INSTALL_PREFIX="${PREFIX}" ../
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
 
 # Build only the library target to avoid linking executables against Homebrew libraries
-cmake --build "${BUILD_DIR}" --target openjp2 -- -j${JOBS}
+cmake --build . --target openjp2 -- -j${JOBS}
 
 # Install only the library (skip make install which rebuilds all targets including executables)
 # Copy the library from build location to PREFIX
