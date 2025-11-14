@@ -59,14 +59,13 @@ cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS:BOOL=OF
     -DCMAKE_IGNORE_PATH=/usr/local/lib/ \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
-    -DBUILD_CODEC:BOOL=OFF \
+    -DBUILD_CODEC:BOOL=OFF -DBUILD_JPIPSERVER:BOOL=OFF -DBUILD_JPIPCLIENT:BOOL=OFF \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
+
 # Build only the library target to avoid linking executables against Homebrew libraries
-# The executables (opj_compress, opj_decompress, opj_dump) require TIFF/PNG which are
-# ARM64-only on ARM64 runners, causing x86_64 linking failures in universal builds
-make -j${JOBS} openjp2
+cmake --build "${BUILD_DIR}" --target openjp2 -- -j${JOBS}
 
 # Install only the library (skip make install which rebuilds all targets including executables)
 # Copy the library from build location to PREFIX
