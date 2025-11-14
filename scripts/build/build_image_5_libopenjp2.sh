@@ -54,31 +54,16 @@ interactive_prompt \
 
 # macOS universal build
 print_info "Configuring for macOS (universal: arm64 + x86_64)..."
-# Detect Homebrew library paths (ARM64 uses /opt/homebrew, x86_64 uses /usr/local)
-# For universal builds, include both paths so linker can find libraries for both architectures
-HOMEBREW_LIB_PATHS=""
-if [[ -d "/opt/homebrew/lib" ]]; then
-    HOMEBREW_LIB_PATHS="-L/opt/homebrew/lib"
-fi
-if [[ -d "/usr/local/lib" ]]; then
-    if [[ -n "${HOMEBREW_LIB_PATHS}" ]]; then
-        HOMEBREW_LIB_PATHS="${HOMEBREW_LIB_PATHS} -L/usr/local/lib"
-    else
-        HOMEBREW_LIB_PATHS="-L/usr/local/lib"
-    fi
-fi
-
 CFLAGS="-arch arm64 -arch x86_64 -mmacosx-version-min=10.15" \
-LDFLAGS="${HOMEBREW_LIB_PATHS}" \
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS:BOOL=OFF \
     -DCMAKE_IGNORE_PATH=/usr/local/lib/ \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DCMAKE_LIBRARY_PATH:path="${OUTPUT_LIB}" -DCMAKE_INCLUDE_PATH:path="${OUTPUT_INCLUDE}" \
-    -DCMAKE_EXE_LINKER_FLAGS="${HOMEBREW_LIB_PATHS}" \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
 
 print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
-make -j${JOBS}
+# Build only the library target to avoid linking executables against Homebrew libraries
+make -j${JOBS} openjp2
 make install
 
 # Copy headers and libraries
