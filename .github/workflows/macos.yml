@@ -1,0 +1,78 @@
+name: Build macOS Libraries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14
+            arch: x86_64
+            platform: macos-x86_64
+          - runner: macos-14
+            arch: arm64
+            platform: macos-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install autoconf automake bash cmake gettext git git-lfs gnu-tar \
+            libtool m4 pkg-config protobuf wget xz
+
+      - name: Debug - Show LLVM and Clang versions
+        run: |
+          echo "=========================================="
+          echo "LLVM and Clang Version Information"
+          echo "=========================================="
+          echo ""
+          echo "=== Clang Version ==="
+          clang --version || echo "clang not found"
+          echo ""
+          echo "=== Clang++ Version ==="
+          clang++ --version || echo "clang++ not found"
+          echo ""
+          echo "=== Which binaries are being used ==="
+          which clang || echo "clang not in PATH"
+          which clang++ || echo "clang++ not in PATH"
+          echo ""
+          echo "=========================================="
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/*.sh
+          chmod +x scripts/build/*.sh
+          chmod +x scripts/install/*.sh
+
+      - name: Clean output folder
+        working-directory: scripts
+        run: ./0_cleanOutputFolder.sh
+
+      - name: Download sources
+        working-directory: scripts
+        run: ./1_getSource.sh
+
+      - name: Build all libraries
+        working-directory: scripts
+        run: ./2_build.sh --build all
+
+      - name: Package libraries
+        working-directory: scripts
+        run: ./4_package.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-${{ matrix.platform }}
+          path: output/platforms/external-${{ matrix.platform }}.tar.gz
+          retention-days: 30
+

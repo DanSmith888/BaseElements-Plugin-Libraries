@@ -1,0 +1,98 @@
+name: Release Libraries
+
+on:
+  workflow_run:
+    workflows: ["Build and Release Libraries", "Build macOS Libraries"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Only run if this was triggered by a tag push
+    if: |
+      (github.event.workflow_run.event == 'push' && 
+       (startsWith(github.event.workflow_run.head_branch, 'refs/tags/v') || 
+        startsWith(github.event.workflow_run.head_branch, 'v'))) ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || github.ref }}
+
+      - name: Get workflow run information
+        id: workflow_runs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commitSha = '${{ github.event.workflow_run.head_sha }}';
+            
+            // Find both workflow runs for this commit
+            const workflows = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: commitSha,
+              per_page: 100
+            });
+            
+            let ubuntuRunId = null;
+            let macosRunId = null;
+            
+            for (const run of workflows.data.workflow_runs) {
+              if (run.name === 'Build and Release Libraries' && run.status === 'completed' && run.conclusion === 'success') {
+                ubuntuRunId = run.id;
+              }
+              if (run.name === 'Build macOS Libraries' && run.status === 'completed' && run.conclusion === 'success') {
+                macosRunId = run.id;
+              }
+            }
+            
+            const bothComplete = ubuntuRunId && macosRunId;
+            
+            core.setOutput('ubuntuRunId', ubuntuRunId || '');
+            core.setOutput('macosRunId', macosRunId || '');
+            core.setOutput('bothComplete', bothComplete ? 'true' : 'false');
+            
+            console.log(`Found Ubuntu run ID: ${ubuntuRunId}`);
+            console.log(`Found macOS run ID: ${macosRunId}`);
+            console.log(`Both workflows complete: ${bothComplete}`);
+            
+            if (!bothComplete) {
+              console.log('Waiting for both workflows to complete. This run will be skipped.');
+            }
+
+      - name: Download Ubuntu artifacts
+        if: steps.workflow_runs.outputs.bothComplete == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.workflow_runs.outputs.ubuntuRunId }}
+
+      - name: Download macOS artifacts
+        if: steps.workflow_runs.outputs.bothComplete == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.workflow_runs.outputs.macosRunId }}
+          merge-multiple: true
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Artifacts downloaded:"
+          find artifacts -type f -name "*.tar.gz" || echo "No artifacts found"
+          ls -la artifacts/ || true
+
+      - name: Create Release
+        if: steps.workflow_runs.outputs.bothComplete == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
