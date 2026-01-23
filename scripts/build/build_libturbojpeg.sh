@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Source common build functionality (platform detection, paths, interactive mode, colors, helpers)
+# Source common build functionality (platform detection, paths, colors, helpers)
 # This allows the script to be run standalone. When called from 2_build.sh,
 # variables are already exported, but sourcing again is harmless.
 source "$(dirname "$0")/_build_common.sh" "$@"
@@ -9,15 +9,9 @@ source "$(dirname "$0")/_build_common.sh" "$@"
 LIBRARY_NAME="libturbojpeg"
 ARCHIVE_NAME="libturbojpeg.tar.gz"
 
-print_header "Starting ${LIBRARY_NAME} Build"
+print_header "Starting BE Library Build : ${LIBRARY_NAME}"
 
 # Clean and create output directories (ensures they exist and are empty)
-interactive_prompt \
-    "Ready to clean and create output directories for ${LIBRARY_NAME}" \
-    "Will remove and recreate: ${OUTPUT_INCLUDE}/${LIBRARY_NAME}" \
-    "Will remove and recreate: ${OUTPUT_LIB}/${LIBRARY_NAME}" \
-    "Will remove and recreate: ${OUTPUT_SRC}/${LIBRARY_NAME}"
-
 rm -rf "${OUTPUT_INCLUDE}/${LIBRARY_NAME}"
 rm -rf "${OUTPUT_LIB}/${LIBRARY_NAME}"
 rm -rf "${OUTPUT_SRC}/${LIBRARY_NAME}"
@@ -27,11 +21,6 @@ mkdir -p "${OUTPUT_LIB}/${LIBRARY_NAME}"
 mkdir -p "${OUTPUT_SRC}/${LIBRARY_NAME}"
 
 # Extract source to output/platforms/${PLATFORM}/src/
-interactive_prompt \
-    "Ready to extract source archive" \
-    "Archive: ${SOURCE_ARCHIVES}/${ARCHIVE_NAME}" \
-    "Destination: ${OUTPUT_SRC}/${LIBRARY_NAME}"
-
 cd "${OUTPUT_SRC}/${LIBRARY_NAME}"
 tar -xf "${SOURCE_ARCHIVES}/${ARCHIVE_NAME}" --strip-components=1
 
@@ -41,11 +30,6 @@ mkdir -p "${BUILD_DIR}"
 PREFIX="${BUILD_DIR}"
 
 # Configure and build
-interactive_prompt \
-    "Ready to configure and build ${LIBRARY_NAME}" \
-    "Platform: ${PLATFORM}" \
-    "Build directory: ${BUILD_DIR}"
-
 if [[ $OS = 'Darwin' ]]; then
     # macOS universal build (separate arm64 and x86_64 builds, then lipo)
     print_info "Configuring for macOS (universal: arm64 + x86_64)..."
@@ -65,8 +49,8 @@ if [[ $OS = 'Darwin' ]]; then
         -DCMAKE_INSTALL_PREFIX="${PREFIX_arm64}" ./
     
     print_info "Building ${LIBRARY_NAME} for arm64 (${JOBS} parallel jobs)..."
-    make -j${JOBS}
-    make install
+    make --silent -j${JOBS}
+    make --silent install
     
     # Build x86_64
     BUILD_DIR_x86_64="${BUILD_DIR}_x86_64"
@@ -83,12 +67,15 @@ if [[ $OS = 'Darwin' ]]; then
         -DCMAKE_INSTALL_PREFIX="${PREFIX_x86_64}" ./
     
     print_info "Building ${LIBRARY_NAME} for x86_64 (${JOBS} parallel jobs)..."
-    make -j${JOBS}
-    make install
+    make --silent -j${JOBS}
+    make --silent install
     
     # Create universal binaries
-    mkdir -p "${PREFIX}/lib"
     print_info "Creating universal binaries..."
+    mkdir -p "${PREFIX}/lib"
+    mkdir -p "${PREFIX}/include"
+    cp -R "${PREFIX_x86_64}/include"/* "${PREFIX}/include/"
+
     lipo -create "${PREFIX_x86_64}/lib/libturbojpeg.a" "${PREFIX_arm64}/lib/libturbojpeg.a" -output "${PREFIX}/lib/libturbojpeg.a"
     lipo -create "${PREFIX_x86_64}/lib/libjpeg.a" "${PREFIX_arm64}/lib/libjpeg.a" -output "${PREFIX}/lib/libjpeg.a"
     
@@ -101,21 +88,12 @@ elif [[ $OS = 'Linux' ]]; then
         -DCMAKE_INSTALL_PREFIX="${PREFIX}" ./
     
     print_info "Building ${LIBRARY_NAME} (${JOBS} parallel jobs)..."
-    make -j${JOBS}
-    make install
+    make --silent -j${JOBS}
+    make --silent install
 fi
 
 # Copy headers and libraries
-interactive_prompt \
-    "Ready to copy headers and libraries" \
-    "Headers: ${OUTPUT_INCLUDE}/${LIBRARY_NAME}/" \
-    "Libraries: ${OUTPUT_LIB}/${LIBRARY_NAME}/libturbojpeg.a and libjpeg.a"
-
-if [[ $OS = 'Darwin' ]]; then
-    cp -R "${PREFIX_x86_64}/include"/* "${OUTPUT_INCLUDE}/${LIBRARY_NAME}/" 2>/dev/null || true
-else
-    cp -R "${PREFIX}/include"/* "${OUTPUT_INCLUDE}/${LIBRARY_NAME}/" 2>/dev/null || true
-fi
+cp -R "${PREFIX}/include"/* "${OUTPUT_INCLUDE}/${LIBRARY_NAME}/" 2>/dev/null || true
 
 cp "${PREFIX}/lib/libturbojpeg.a" "${OUTPUT_LIB}/${LIBRARY_NAME}/"
 cp "${PREFIX}/lib/libjpeg.a" "${OUTPUT_LIB}/${LIBRARY_NAME}/"

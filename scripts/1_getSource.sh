@@ -41,8 +41,8 @@ download() {
     local count="$3"
     local url="$4"
     local filename="$5"
-    local max_retries=3
-    local retry_delay=2
+    local max_retries=5
+    local retry_delay=5
     local attempt=1
     
     print_info "Downloading ${name} ${version} (${count} of 25)..."
@@ -61,7 +61,7 @@ download() {
         # --connect-timeout=10: connection timeout
         # --read-timeout=30: timeout for reading data
         # --tries=1: don't retry (we handle retries in the script)
-        if wget -q --show-progress --timeout=60 --dns-timeout=10 --connect-timeout=10 --read-timeout=30 --tries=1 -O "$filename" "$url"; then
+        if wget -q --timeout=60 --dns-timeout=10 --connect-timeout=10 --read-timeout=30 --tries=1 -O "$filename" "$url"; then
             # Download succeeded, break out of retry loop
             break
         fi
@@ -123,34 +123,27 @@ download() {
 print_header "Starting download of 25 source archives..."
 echo ""
 
-download "Boost" "1.85.0" "1" "https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.gz" "boost.tar.gz"
+download "Boost" "1.89.0" "1" "https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-b2-nodocs.tar.gz" "boost.tar.gz"
 download "Curl" "8.7.1" "2" "https://github.com/curl/curl/releases/download/curl-8_7_1/curl-8.7.1.tar.gz" "curl.tar.gz"
 download "duktape" "2.7.0" "3" "https://duktape.org/duktape-2.7.0.tar.xz" "duktape.tar.xz"
 download "expat" "2.6.2" "4" "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-2.6.2.tar.xz" "expat.tar.xz"
 download "fontconfig" "2.15.0" "5" "https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.15.0.tar.gz" "fontconfig.tar.gz"
 download "freetype" "2.13.2" "6" "https://sourceforge.net/projects/freetype/files/freetype2/2.13.2/freetype-2.13.2.tar.gz" "freetype.tar.gz"
-download "libiconv" "1.17" "7" "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz" "libiconv.tar.gz"
+download "libiconv" "1.17" "7" "https://gnu.mirrorservice.org/libiconv/libiconv-1.17.tar.gz" "libiconv.tar.gz"
 download "libde265" "1.0.16" "8" "https://github.com/strukturag/libde265/archive/refs/tags/v1.0.16.tar.gz" "libde265.tar.gz"
-download "openjpeg" "2.5.2" "9" "https://github.com/uclouvain/openjpeg/archive/refs/tags/v2.5.2.tar.gz" "libopenjp2.tar.gz"
-download "libheif" "1.17.6" "10" "https://github.com/strukturag/libheif/releases/download/v1.17.6/libheif-1.17.6.tar.gz" "libheif.tar.gz"
+download "openjpeg" "2.5.4" "9" "https://github.com/uclouvain/openjpeg/archive/refs/tags/v2.5.4.tar.gz" "libopenjp2.tar.gz"
+download "libheif" "1.20.2" "10" "https://github.com/strukturag/libheif/releases/download/v1.20.2/libheif-1.20.2.tar.gz" "libheif.tar.gz"
 download "libjpeg" "v9f" "11" "http://ijg.org/files/jpegsrc.v9f.tar.gz" "libjpeg.tar.gz"
 download "libjpeg-turbo" "3.0.3" "12" "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.0.3/libjpeg-turbo-3.0.3.tar.gz" "libturbojpeg.tar.gz"
 download "ImageMagick" "7.1.1-29" "13" "https://github.com/ImageMagick/ImageMagick/archive/refs/tags/7.1.1-29.tar.gz" "ImageMagick.tar.gz"
 download "jq" "1.7.1" "14" "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-1.7.1.tar.gz" "jq.tar.gz"
 download "libssh2" "1.11.1" "15" "https://libssh2.org/download/libssh2-1.11.1.tar.gz" "libssh.tar.gz"
-download "libxml2" "2.13.0" "16" "https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.0.tar.xz" "libxml.tar.xz"
-download "libxslt" "1.1.42" "17" "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz" "libxslt.tar.xz"
+download "libxml2" "2.15.0" "16" "https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz" "libxml.tar.xz"
+download "libxslt" "1.1.43" "17" "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.43.tar.xz" "libxslt.tar.xz"
 download "openssl" "3.2.1" "18" "https://www.openssl.org/source/openssl-3.2.1.tar.gz" "openssl.tar.gz"
 download "Poco" "1.14.2" "19" "https://github.com/pocoproject/poco/archive/refs/tags/poco-1.14.2-release.tar.gz" "poco.tar.gz"
-download "libunistring" "1.2" "20" "https://ftp.gnu.org/gnu/libunistring/libunistring-1.2.tar.gz" "libunistring.tar.gz"
-# PoDoFo: Optional different versions for different platforms
-# Linux uses 0.9.8 (compatible with CMake 3.22.1)
-#   NOTE: Ubuntu 22.04 cannot build PoDoFo versions past 0.9.8 due to CMake version limitations.
-#   Ubuntu 22.04 ships with CMake 3.22.1, but PoDoFo 1.0.2b+ requires CMake 3.23+.
-# macOS uses 1.0.2b (requires CMake 3.23+, which macOS has via Homebrew)
-download "podofo (Linux)" "0.9.8" "21a" "https://ixpeering.dl.sourceforge.net/project/podofo/podofo/0.9.8/podofo-0.9.8.tar.gz" "podofo-linux.tar.gz"
-download "podofo (macOS)" "0.9.8" "21a" "https://ixpeering.dl.sourceforge.net/project/podofo/podofo/0.9.8/podofo-0.9.8.tar.gz" "podofo-macos.tar.gz"
-# download "podofo (macOS)" "1.0.2b" "21b" "https://github.com/nickorr/podofo/archive/refs/tags/1.0.2b.tar.gz" "podofo-macos.tar.gz"
+download "libunistring" "1.2" "20" "https://gnu.mirrorservice.org/libunistring/libunistring-1.2.tar.gz" "libunistring.tar.gz"
+download "podofo" "1.0.3" "21" "https://github.com/podofo/podofo/archive/refs/tags/1.0.3.tar.gz" "podofo.tar.gz"
 download "zlib" "1.3.1" "22" "https://www.zlib.net/zlib-1.3.1.tar.xz" "zlib.tar.xz"
 download "libpng" "1.6.43" "23" "https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.43.tar.gz" "libpng.tar.gz"
 download "nghttp2" "1.62.1" "24" "https://github.com/nghttp2/nghttp2/releases/download/v1.62.1/nghttp2-1.62.1.tar.xz" "nghttp2.tar.xz"
